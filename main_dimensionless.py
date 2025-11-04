@@ -17,6 +17,8 @@ Author: (you)
 """
 
 import os, math, glob
+from dataclass import PICConfig
+
 
 # ---------------------------
 # Backend selection (GPU/CPU)
@@ -39,40 +41,6 @@ except Exception:
     scatter_add = None
     CUPY = False
 
-# ================================================================
-# 物理常数与等离子体归一化（中英文注释）
-# ================================================================
-# Physical constants (SI)
-e_SI = 1.602176634e-19       # C
-m_e_SI = 9.10938356e-31      # kg
-eps0_SI = 8.8541878128e-12   # F/m
-kB_SI = 1.380649e-23         # J/K
-
-# Typical physical parameters (Scheme A)
-Te_eV = 5.0                  # Electron temperature [eV]
-n0_SI = 1.0e15               # Reference electron density [m^-3]
-
-# Derived physical scales
-Te_J = Te_eV * e_SI
-vth_SI = math.sqrt(kB_SI * Te_J / m_e_SI)                 # Thermal velocity
-omega_p_SI = math.sqrt(n0_SI * e_SI**2 / (eps0_SI * m_e_SI))  # Plasma frequency
-lambdaD_SI = vth_SI / omega_p_SI                          # Debye length
-
-print("=== Normalization (Plasma units) ===")
-print(f"T_e = {Te_eV:.2f} eV, n0 = {n0_SI:.2e} m^-3")
-print(f"v_th = {vth_SI:.3e} m/s, ω_p = {omega_p_SI:.3e} 1/s, λ_D = {lambdaD_SI:.3e} m")
-print("--------------------------------------")
-print("All quantities below are in normalized (dimensionless) plasma units:")
-print(" - time scaled by 1/ω_p, length by λ_D, velocity by v_th")
-print(" - electric field scaled by (m_e v_th ω_p / e)")
-print(" - charge density scaled by (n0 e)")
-print(" - energy scaled by (n0 m_e v_th^2)")
-print("======================================\n")
-
-# ================================================================
-# 在归一化体系中，以下常数均设为1：
-# e = m_e = ε0 = n0 = ω_p = λ_D = v_th = 1
-# ================================================================
 
 # ---------------------------
 # Utilities
@@ -137,6 +105,7 @@ class Particles:
         self.m = dtype(w)
         self.x = zeros_like_shape(self.Np, dtype=dtype) # x in [0,Lx)
         self.v = zeros_like_shape((self.Np,3), dtype=dtype) # vx,vy,vz
+        self.label = xp.zeros(self.Np, dtype=xp.int8) # different stream labels
 
 # ---------------------------
 # Deposition & Gather (CIC)
@@ -335,31 +304,46 @@ class Diagnostics:
         energy_arr = _np.array(self.energy_data,float)
         _np.savetxt(os.path.join(self.outdir,"energy.txt"),energy_arr,
                     header="step  W_E_hat  W_K_hat  W_T_hat  (dimensionless)")
-        print("\nAll energies are dimensionless.")
-        print(f"To recover SI: multiply by n0*m_e*v_th^2 = {n0_SI*m_e_SI*vth_SI**2:.3e} J per unit area")
+    
 
 # ---------------------------
 # PIC Main class
 # ---------------------------
 class PIC1D3V_ES:
-    def __init__(self,Lx=2*math.pi,Nx=512,Np=8e5,dt=0.05,steps=1000,
-                 v0=1.0,vth=1.0,outdir="output",diag_interval=10,phase_snap=50):
-        self.grid = Grid1D(Lx,Nx)
+    def __init__(self, cfg: PICConfig):
+
+        self.cfg = cfg
+        cfg.compute_scales()   # 初始化时计算归一化参数
+
+        self.grid = Grid1D(cfg.Lx,cfg.Nx)
         self.fields=Fields(self.grid)
-        self.dt=float(dt)
-        self.steps=int(steps)
-        self.e=Particles(Np,Lx,q_sign=-1.0)
+        self.dt=float(cfg.dt)
+        self.steps=int(cfg.steps)
+        self.e=Particles(cfg.Np,cfg.Lx,q_sign=-1.0)
         self._init_positions_uniform()
-        self._init_two_stream(v0,vth)
+        self._init_two_stream(cfg.v0,cfg.vth)
         self.rho=zeros_like_shape(self.grid.Nx)
-        self.diag=Diagnostics(self.grid,outdir,diag_interval,phase_snap)
+        self.diag=Diagnostics(self.grid,cfg.outdir,cfg.diag_interval,cfg.phase_snap)
 
     def _init_positions_uniform(self):
         # Uniformly distribute macro-particles in [0,Lx)
         Np=self.e.Np
+
         i=xp.arange(Np,dtype=xp.float64)
         rnd=xp.random.random(Np).astype(xp.float64)
         self.e.x=((i+rnd)/Np)*self.grid.Lx
+
+        # === 2. 生成标签（前半 +v0 流，后半 -v0 流） ===
+        half = Np // 2
+        labels = xp.concatenate((
+            xp.zeros(half, dtype=xp.int8),   # label=0 → +v0 流
+            xp.ones(Np - half, dtype=xp.int8)  # label=1 → -v0 流
+        ))
+
+        # === 3. 打乱索引，使位置与标签随机对应（空间混合） ===
+        perm = xp.random.permutation(Np)
+        self.e.x = self.e.x[perm]
+        self.e.label = labels[perm]
 
     def _init_two_stream(self,v0=1.0,vth=1.0):
         # Initialize two counter-streaming beams
@@ -371,14 +355,8 @@ class PIC1D3V_ES:
         # 位置空间均匀分布
         v[:]=vth*xp.random.standard_normal((Np,3)).astype(v.dtype)
         # 分配速度：前半 +v0，后半 -v0
-        half = Np // 2
-        labels = xp.concatenate((xp.ones(half), -xp.ones(Np-half)))
-        # ✅ 随机打乱，让两流粒子在空间中混合
-        xp.random.shuffle(labels)
-        # 设置速度
-        v[:,0] += v0 * labels
+        v[:, 0] += v0 * (1.0 - 2.0 * self.e.label)
 
-        # v = self.elc.v
 
         # half = Np // 2
         # v[:] = vth * xp.random.standard_normal((Np,3)).astype(v.dtype) # Normal distribution N(0,1) * v_th
@@ -446,25 +424,30 @@ class PIC1D3V_ES:
 
         self.diag.finalize_and_save()
 
+
 # ---------------------------
 # Entry point
-# ---------------------------
 if __name__=="__main__":
     print(f"Backend: {'CuPy (GPU)' if CUPY else 'NumPy (CPU)'}")
-    cfg=dict(
-        # Lx=2*math.pi,   # domain length in λ_D units (physical Lx = L̂x * λ_D)
-        Lx=9.0,
-        Nx=512/2,
+
+    # 在 main 里定义输入参数（简洁清晰）
+    cfg = PICConfig(
+        Lx=30.0, # domain length in λ_D units (physical Lx = L̂x * λ_D) unit: λ_D
+        Nx=512,
         Np=800_000,
-        dt=0.002,        # normalized dt = ω_p * Δt
-        steps=5000,
-        v0=1.5,         # drift velocity normalized by v_th
-        vth=0.2,        # thermal velocity normalized by v_th
-        outdir="output",
+
+        dt=0.002, # normalized dt = ω_p * Δt
+        steps=4000,
+
+        v0=2.0, # unit: v_th
+        n0=1e15, # unit: m^-3
+        Te=5.0, # unit: eV
+
         diag_interval=10,
         phase_snap=50,
     )
-    sim=PIC1D3V_ES(**cfg)
+
+    sim=PIC1D3V_ES(cfg)
     sim.run(verbose=True)
 
     
