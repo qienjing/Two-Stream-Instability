@@ -320,48 +320,44 @@ class PIC1D3V_ES:
         self.dt=float(cfg.dt)
         self.steps=int(cfg.steps)
         self.e=Particles(cfg.Np,cfg.Lx,q_sign=-1.0)
-        self._init_positions_uniform()
-        self._init_two_stream(cfg.v0,cfg.vth)
+        self.v0=float(cfg.v0)
+        self.vth=float(cfg.vth)
+        self._init_two_stream()
         self.rho=zeros_like_shape(self.grid.Nx)
         self.diag=Diagnostics(self.grid,cfg.outdir,cfg.diag_interval,cfg.phase_snap)
 
-    def _init_positions_uniform(self):
+    def _init_two_stream(self):
+        ## initalize positions uniformly in [0,Lx)
         # Uniformly distribute macro-particles in [0,Lx)
         Np=self.e.Np
+        Lx = self.grid.Lx
 
-        i=xp.arange(Np,dtype=xp.float64)
-        rnd=xp.random.random(Np).astype(xp.float64)
-        self.e.x=((i+rnd)/Np)*self.grid.Lx
+        # === 1. 均匀分布位置 + 随机扰动 ===
+        i = xp.arange(Np, dtype=xp.float64)
+        rnd = xp.random.random(Np).astype(xp.float64)
+        x = ((i + rnd) / Np) * Lx
 
-        # === 2. 生成标签（前半 +v0 流，后半 -v0 流） ===
+        # === 2. 生成标签：前半 +v0，后半 -v0 ===
         half = Np // 2
         labels = xp.concatenate((
-            xp.zeros(half, dtype=xp.int8),   # label=0 → +v0 流
-            xp.ones(Np - half, dtype=xp.int8)  # label=1 → -v0 流
+            xp.zeros(half, dtype=xp.int8),   # 0 → +v0
+            xp.ones(Np - half, dtype=xp.int8)  # 1 → -v0
         ))
 
-        # === 3. 打乱索引，使位置与标签随机对应（空间混合） ===
-        perm = xp.random.permutation(Np)
-        self.e.x = self.e.x[perm]
-        self.e.label = labels[perm]
-
-    def _init_two_stream(self,v0=1.0,vth=1.0):
-        # Initialize two counter-streaming beams
+        # === 3. 生成速度（带热噪声） ===
+        ## initalize velocity for two-stream
         # Physical form: v = ±v0 + thermal noise
         # Normalization: v̂ = v/v_th , hence v0̂ = v0/v_th
-        Np=self.e.Np
-        v=self.e.v
-
-        # 位置空间均匀分布
-        v[:]=vth*xp.random.standard_normal((Np,3)).astype(v.dtype)
-        # 分配速度：前半 +v0，后半 -v0
-        v[:, 0] += v0 * (1.0 - 2.0 * self.e.label)
+        v = self.vth * xp.random.standard_normal((Np, 3)).astype(xp.float64)
+        v[:, 0] += self.v0 * (1.0 - 2.0 * labels)   # label=0→+v0, label=1→−v0
 
 
-        # half = Np // 2
-        # v[:] = vth * xp.random.standard_normal((Np,3)).astype(v.dtype) # Normal distribution N(0,1) * v_th
-        # v[:half,0] += v0
-        # v[half:,0] -= v0
+        # === 4. 统一随机打乱（x、v、label 都一起 perm） ===
+        # by only disrupting the order of positions, ensure uniform spatial distribution 
+        perm = xp.random.permutation(Np)
+        self.e.x = x[perm]
+        self.e.v = v
+        self.e.label = labels
 
 
     def step(self, first_step=False):
@@ -437,7 +433,7 @@ if __name__=="__main__":
         Np=800_000,
 
         dt=0.002, # normalized dt = ω_p * Δt
-        steps=4000,
+        steps=1000,
 
         v0=2.0, # unit: v_th
         n0=1e15, # unit: m^-3
