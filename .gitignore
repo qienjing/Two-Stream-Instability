@@ -1,0 +1,4 @@
+# outputs
+output/
+*.npz
+*.txt
