@@ -171,7 +171,7 @@ def solve_poisson_1d(grid: Grid1D, rho, eps0=1.0):
     # phi_k[0] = 0.0                     # ✅ 去除 k=0 模 (DC component)
     kd = grid.kd
 
-    if True:
+    if False:
         phi_k[1:] = -rho_k[1:] / (eps0 * (k[1:]**2))
         Ex_k = -1j * k * phi_k  # E_k = -ik φ_k
     else:
@@ -221,11 +221,7 @@ def push_particle(parts: Particles, grid: Grid1D, Ex_p, Ey_p, Ez_p, Bx_p, By_p, 
     v = parts.v
     x = parts.x
 
-    # (a) x^{n+1} = x^n + v^{n+1/2} dt
-    x += v[:,0] * dt
-    x[:] = xp.mod(x, grid.Lx)   # periodic BC
-
-    # (b) Boris: v^{n+1/2} -> v^{n+3/2}
+    # (1) Boris: v^{n-1/2} + E^{n} -> v^{n+1/2}
     qmdt2 = (q * dt) / (2.0 * m)
 
     # 预半步 E-kick：v^- = v^{n+1/2} + (qE/m) dt/2
@@ -246,10 +242,14 @@ def push_particle(parts: Particles, grid: Grid1D, Ex_p, Ey_p, Ez_p, Bx_p, By_p, 
     vpy = vym + (vzm*sx - vxm*sz)
     vpz = vzm + (vxm*sy - vym*sx)
 
-    # 后半步 E-kick：v^{n+3/2} = v^+ = v' + (qE/m) dt/2, 这一步是为了下一次推进做准备
+    # 后半步 E-kick：v^{n+1/2} = v^+ = v' + (qE/m) dt/2, 这一步是为了下一次推进做准备
     v[:,0] = vpx + qmdt2 * Ex_p
     v[:,1] = vpy + qmdt2 * Ey_p
     v[:,2] = vpz + qmdt2 * Ez_p
+
+    # (2) x^{n+1} = x^n + v^{n+1/2} dt
+    x += v[:,0] * dt
+    x[:] = xp.mod(x, grid.Lx)   # periodic BC
 
 
 # ---------------------------
@@ -401,10 +401,12 @@ class PIC1D3V_ES:
         Ex_p=gather_CIC_field(g,f.Ex,e.x)
         zeros=xp.zeros_like(Ex_p)
 
-        if first_step:
-            half_step_preheat(e,Ex_p,zeros,zeros,dt)
-        else:
-            push_particle(e,g,Ex_p,zeros,zeros,zeros,zeros,zeros,dt)
+        push_particle(e,g,Ex_p,zeros,zeros,zeros,zeros,zeros,dt)
+
+        # if first_step:
+        #     half_step_preheat(e,Ex_p,zeros,zeros,dt)
+        # else:
+        #     push_particle(e,g,Ex_p,zeros,zeros,zeros,zeros,zeros,dt)
 
     def run(self,verbose=True):
         # ---- 初始化后，做一次半步预热 ----
@@ -463,11 +465,11 @@ if __name__=="__main__":
         Np=800_000,
 
         dt=0.002, # normalized dt = ω_p * Δt
-        steps=5000,
+        steps=4000,
 
-        v0=2.0, # unit: v_th
+        v0=4.0, # unit: v_th
         n0=1e15, # unit: m^-3
-        Te=5.0, # unit: eV
+        Te=2.0, # unit: eV
 
         diag_interval=10,
         phase_snap=50,
