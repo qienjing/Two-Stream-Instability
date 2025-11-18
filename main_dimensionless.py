@@ -182,7 +182,7 @@ def solve_poisson_1d(grid: Grid1D, rho, eps0=1.0):
     rho_k = fft.rfft(rho)
     phi_k = xp.zeros_like(rho_k, dtype=rho_k.dtype)
 
-    # phi_k[0] = 0.0                     # ✅ 去除 k=0 模 (DC component)
+    phi_k[0] = 0.0                     # ✅ 去除 k=0 模 (DC component)
     kd = grid.kd
 
     if True:
@@ -406,11 +406,13 @@ class PIC1D3V_ES:
 
     def step(self, first_step=False):
         g,e,f,dt=self.grid,self.e,self.fields,self.dt
+
+        self.rho -= xp.mean(self.rho) # Quasi-neutral
+        self.rho[:] = 0.25 * (xp.roll(self.rho,-1) + 2*self.rho + xp.roll(self.rho,1)) # 抑制高k噪声
         deposit_charge_CIC(g,e,self.rho)
         # Neutralize background (remove DC component)
         # Physical form: add +n0e to balance mean(ρ)
-        self.rho -= xp.mean(self.rho) # Quasi-neutral
-        # self.rho[:] = 0.25 * (xp.roll(self.rho,-1) + 2*self.rho + xp.roll(self.rho,1)) # 抑制高k噪声
+
         f.Ex = solve_poisson_1d(g,self.rho)
         Ex_p=gather_CIC_field(g,f.Ex,e.x)
         zeros=xp.zeros_like(Ex_p)
@@ -476,7 +478,7 @@ if __name__=="__main__":
     cfg = PICConfig(
         Lx=50.0, # domain length in λ_D units (physical Lx = L̂x * λ_D) unit: λ_D
         Nx=512,
-        Np=800_000,
+        Np=1000_000,
 
         dt=0.005, # normalized dt = ω_p * Δt
         steps=20000,
