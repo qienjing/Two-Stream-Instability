@@ -278,10 +278,12 @@ class Diagnostics:
         self.energy_data.append([it, WE, WK, WT])
         return WE, WK, WT
     
-    def record_phase_space(self, it, x_xp, vx_xp, grid, nbins_x=128, nbins_v=128):
+    def record_phase_space(self, it, x_xp, vx_xp, label_xp, grid, nbins_x=128, nbins_v=128):
         # convert CuPy → NumPy
         x = to_np(x_xp)
         vx = to_np(vx_xp)
+        lbl = to_np(label_xp).astype(int)
+
 
         # wrap positions to [0, Lx)
         Lx = grid.Lx
@@ -289,15 +291,38 @@ class Diagnostics:
 
         # choose velocity limits
         vmin, vmax = _np.percentile(vx, [1, 99])  # auto range to ignore outliers
+        # === histogram for ALL particles ===
+        H_all, xedges, vedges = _np.histogram2d(
+        x, vx,
+        bins=(nbins_x, nbins_v),
+        range=[[0, Lx], [vmin, vmax]]
+        )
 
-        # make histogram
-        H, xedges, vedges = _np.histogram2d(x, vx, bins=(nbins_x, nbins_v),
-                                           range=[[0, Lx], [vmin, vmax]])
+        # === histogram for label = 0 (+v0 flow) ===
+        H0, _, _ = _np.histogram2d(
+        x[lbl == 0], vx[lbl == 0],
+        bins=(nbins_x, nbins_v),
+        range=[[0, Lx], [vmin, vmax]]
+        )
 
-        # save
+        # === histogram for label = 1 (-v0 flow) ===
+        H1, _, _ = _np.histogram2d(
+        x[lbl == 1], vx[lbl == 1],
+        bins=(nbins_x, nbins_v),
+        range=[[0, Lx], [vmin, vmax]]
+        )
+
+        
+        # save everything
         outpath = os.path.join(self.outdir, f"phase_{it:05d}.npz")
-        _np.savez(outpath, H=H, xedges=xedges, vedges=vedges,
-                 meta=_np.array([vmin, vmax, nbins_v]))
+        _np.savez(outpath,
+              H_all=H_all,
+              H0=H0,
+              H1=H1,
+              xedges=xedges,
+              vedges=vedges,
+              meta=_np.array([vmin, vmax, nbins_v]))
+        outpath = os.path.join(self.outdir, f"phase_{it:05d}.npz")
 
 
     def finalize_and_save(self):
@@ -391,7 +416,7 @@ class PIC1D3V_ES:
 
             # phase space diag
             if (it%self.diag.phase_snap)==0 or (it==self.steps-1):
-                self.diag.record_phase_space(it, self.e.x, self.e.v[:,0], self.grid)
+                self.diag.record_phase_space(it, self.e.x, self.e.v[:,0], self.e.label, self.grid)
 
                 # 诊断 打印 CFL 数
                 vmax = float(xp.max(xp.abs(self.e.v[:,0])))
@@ -433,7 +458,7 @@ if __name__=="__main__":
         Np=800_000,
 
         dt=0.002, # normalized dt = ω_p * Δt
-        steps=1000,
+        steps=4000,
 
         v0=2.0, # unit: v_th
         n0=1e15, # unit: m^-3
