@@ -168,17 +168,23 @@ def solve_poisson_1d(grid: Grid1D, rho, eps0=1.0):
     rho_k = fft.rfft(rho)
     phi_k = xp.zeros_like(rho_k, dtype=rho_k.dtype)
 
-    phi_k[0] = 0.0                     # ✅ 去除 k=0 模 (DC component)
+    # phi_k[0] = 0.0                     # ✅ 去除 k=0 模 (DC component)
     kd = grid.kd
-    # phi_k[1:] = -rho_k[1:] / (eps0 * (k[1:]**2))
-    # 用离散波数，避免 k^2 与网格拉普拉斯不配
-    phi_k[1:] = -rho_k[1:] / (eps0 * (kd[1:]**2))
+
+    if True:
+        phi_k[1:] = -rho_k[1:] / (eps0 * (k[1:]**2))
+        Ex_k = -1j * k * phi_k  # E_k = -ik φ_k
+    else:
+        # 用离散波数，避免 k^2 与网格拉普拉斯不配
+        phi_k[1:] = -rho_k[1:] / (eps0 * (kd[1:]**2))
+
+        # ✅ 用“离散梯度”而不是连续 k
+        kg = (1.0 / grid.dx) * xp.sin(grid.k * grid.dx)  # Γ = sin(k dx)/dx
+        Ex_k = -1j * kg * phi_k
 
     # E_k = -ik φ_k → Ê = eE / (m_e v_th ω_p)
     # Ex_k = -1j * k * phi_k # E = -∂x φ → 仍用连续 k 做导数是可以的
-    # ✅ 用“离散梯度”而不是连续 k
-    kg = (1.0 / grid.dx) * xp.sin(grid.k * grid.dx)  # Γ = sin(k dx)/dx
-    Ex_k = -1j * kg * phi_k
+    
     Ex = fft.irfft(Ex_k, n=Nx).astype(rho.dtype)
     return Ex
 
@@ -191,10 +197,10 @@ def half_step_preheat(parts: Particles, Ex_p, Ey_p, Ez_p, dt):
     把速度从整步 v^0 推到半步 v^{1/2} = v_nhalf。
     """
     q, m = parts.q, parts.m
-    coef = 0.5 * dt * (q / m)
-    parts.v[:,0] += coef * Ex_p
-    parts.v[:,1] += coef * Ey_p
-    parts.v[:,2] += coef * Ez_p
+    qmdt2 = (q * dt) / (2.0 * m)
+    parts.v[:,0] += qmdt2 * Ex_p
+    parts.v[:,1] += qmdt2 * Ey_p
+    parts.v[:,2] += qmdt2 * Ez_p
 
 
 def push_particle(parts: Particles, grid: Grid1D, Ex_p, Ey_p, Ez_p, Bx_p, By_p, Bz_p, dt):
@@ -377,8 +383,7 @@ class PIC1D3V_ES:
         v[:, 0] += self.v0 * (1.0 - 2.0 * labels)   # label=0→+v0, label=1→−v0
 
 
-        # === 4. 统一随机打乱（x、v、label 都一起 perm） ===
-        # by only disrupting the order of positions, ensure uniform spatial distribution 
+        # === 4. 随机打乱 x ===
         perm = xp.random.permutation(Np)
         self.e.x = x[perm]
         self.e.v = v
@@ -458,7 +463,7 @@ if __name__=="__main__":
         Np=800_000,
 
         dt=0.002, # normalized dt = ω_p * Δt
-        steps=4000,
+        steps=5000,
 
         v0=2.0, # unit: v_th
         n0=1e15, # unit: m^-3
