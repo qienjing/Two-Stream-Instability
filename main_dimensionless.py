@@ -23,7 +23,12 @@ from dataclass import PICConfig
 # ---------------------------
 # Backend selection (GPU/CPU)
 # ---------------------------
+# ===========================
+#   Backend selection + seed
+# ===========================
 USE_CUPY = True
+SEED = 12345   # <- 控制可重复性的种子
+
 try:
     if USE_CUPY:
         import cupy as cp
@@ -32,14 +37,25 @@ try:
         fft = cp.fft
         scatter_add = cpx_scatter_add
         CUPY = True
+
+        # ---- Set deterministic random seed for CuPy ----
+        cp.random.seed(SEED)
+        # Ensure sync (avoid async randomness)
+        cp.cuda.Stream.null.synchronize()
+
     else:
-        raise ImportError
-except Exception:
+        raise ImportError  # force fallback to NumPy when disabled
+
+except ImportError:
     import numpy as np
     xp = np
     import numpy.fft as fft
     scatter_add = None
     CUPY = False
+
+    # ---- Set deterministic random seed for NumPy ----
+    np.random.seed(SEED)
+
 
 
 # ---------------------------
@@ -76,8 +92,6 @@ class Grid1D:
         # 离散拉普拉斯本征值用 k_tilde = (2/dx) sin(k dx / 2)
         kd = (2.0 / self.dx) * xp.sin(0.5 * k_cont * self.dx)
         self.kd = kd # shape (Nx/2+1,)
-
-        self.k = (2.0 * math.pi / self.Lx) * m # shape (Nx/2+1,)
 
 # ---------------------------
 # Fields container (ES now, EM ready)
@@ -171,12 +185,12 @@ def solve_poisson_1d(grid: Grid1D, rho, eps0=1.0):
     phi_k[0] = 0.0                     # ✅ 去除 k=0 模 (DC component)
     kd = grid.kd
 
-    if False:
-        phi_k[1:] = -rho_k[1:] / (eps0 * (k[1:]**2))
+    if True:
+        phi_k[1:] = rho_k[1:] / (eps0 * (k[1:]**2))
         Ex_k = -1j * k * phi_k  # E_k = -ik φ_k
     else:
         # 用离散波数，避免 k^2 与网格拉普拉斯不配
-        phi_k[1:] = -rho_k[1:] / (eps0 * (kd[1:]**2))
+        phi_k[1:] = rho_k[1:] / (eps0 * (kd[1:]**2))
 
         # ✅ 用“离散梯度”而不是连续 k
         kg = (1.0 / grid.dx) * xp.sin(grid.k * grid.dx)  # Γ = sin(k dx)/dx
@@ -462,19 +476,19 @@ if __name__=="__main__":
 
     # 在 main 里定义输入参数（简洁清晰）
     cfg = PICConfig(
-        Lx=30.0, # domain length in λ_D units (physical Lx = L̂x * λ_D) unit: λ_D
+        Lx=50.0, # domain length in λ_D units (physical Lx = L̂x * λ_D) unit: λ_D
         Nx=512,
         Np=1000_000,
 
-        dt=0.001, # normalized dt = ω_p * Δt
-        steps=16000,
+        dt=0.005, # normalized dt = ω_p * Δt
+        steps=20000,
 
-        v0=4.0, # unit: v_th
+        v0=5.0, # unit: v_th
         n0=1e15, # unit: m^-3
         Te=2.0, # unit: eV
 
         diag_interval=10,
-        phase_snap=50,
+        phase_snap=100,
     )
 
     sim=PIC1D3V_ES(cfg)
