@@ -344,12 +344,36 @@ class Diagnostics:
               meta=_np.array([vmin, vmax, nbins_v]))
         outpath = os.path.join(self.outdir, f"phase_{it:05d}.npz")
 
+    # Save all basic simulation parameters to params.txt
+    def save_params(self, cfg):
+        """Save all basic simulation parameters to params.txt"""
+
+        out = []
+        out.append("### PIC Simulation Parameters")
+        out.append("")
+        for k,v in cfg.__dict__.items():
+            out.append(f"{k} = {v}")
+        out.append("")
+        out.append("### Derived / Grid Parameters")
+        out.append(f"Lx = {self.grid.Lx}")
+        out.append(f"Nx = {self.grid.Nx}")
+        out.append(f"dx = {self.grid.dx}")
+        out.append("")
+        out.append("### Diagnostics Settings")
+        out.append(f"diag_interval = {self.diag_interval}")
+        out.append(f"phase_snap = {self.phase_snap}")
+
+        with open(os.path.join(self.outdir, "params.txt"), "w") as f:
+            f.write("\n".join(out))
+
 
     def finalize_and_save(self):
         energy_arr = _np.array(self.energy_data,float)
         _np.savetxt(os.path.join(self.outdir,"energy.txt"),energy_arr,
                     header="step  W_E_hat  W_K_hat  W_T_hat  (dimensionless)")
-    
+        
+        # Save params
+        self.save_params(cfg)
 
 # ---------------------------
 # PIC Main class
@@ -476,19 +500,19 @@ if __name__=="__main__":
 
     # 在 main 里定义输入参数（简洁清晰）
     cfg = PICConfig(
-        Lx=50.0, # domain length in λ_D units (physical Lx = L̂x * λ_D) unit: λ_D
+        Lx=30, # domain length in λ_D units (physical Lx = L̂x * λ_D) unit: λ_D
         Nx=512,
         Np=1000_000,
 
-        dt=0.005, # normalized dt = ω_p * Δt
-        steps=20000,
+        dt=0.05, # normalized dt/ω_p = real Δt
+        steps=5000,
 
         v0=5.0, # unit: v_th
         n0=1e15, # unit: m^-3
         Te=2.0, # unit: eV
 
         diag_interval=10,
-        phase_snap=100,
+        phase_snap=50,
     )
 
     sim=PIC1D3V_ES(cfg)
