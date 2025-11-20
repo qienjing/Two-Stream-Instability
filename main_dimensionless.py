@@ -277,13 +277,12 @@ class Diagnostics:
         self.diag_interval = int(diag_interval)
         self.phase_snap = int(phase_snap)
         os.makedirs(outdir, exist_ok=True)
+
+        # Energy Data: [it, W_E, W_K, W_T]
         self.energy_data = []
-        self.k_axis = (2*_np.pi/grid.Lx) * _np.arange(grid.Nx//2 + 1)
-        self.kmax_index = None
-        self.kmax_list_steps = []
-        self.kmax_amps = []
-        self.kmax_phis = []
-        self.total_amps = []
+
+        # Field Modes Data
+        self.modes_data = []
 
     def record_energy(self, it, Ex_xp, v_xp, m, eps0=1.0):
         Ex = to_np(Ex_xp)
@@ -344,6 +343,37 @@ class Diagnostics:
               meta=_np.array([vmin, vmax, nbins_v]))
         outpath = os.path.join(self.outdir, f"phase_{it:05d}.npz")
 
+    # Record k-space modes
+    def record_field_modes(self, t, Ex_xp):
+        """
+        Perform FFT on Ex and record the amplitude of the first few modes.
+        t: current simulation time (dt * steps)
+        """
+        # 1. FFT transform (using cupy.fft or numpy.fft based on backend)
+        # Ex_xp is real, so we use rfft
+        Ex_k = fft.rfft(Ex_xp)
+        
+        # 2. Calculate Amplitude |E_k|
+        # Normalization: divide by Nx to match physical amplitude definition roughly
+        # (Definition varies, but for relative growth rate, consistent scaling is enough)
+        Amps = xp.abs(Ex_k) / self.grid.Nx
+        
+        # 3. Extract first few modes (m=1, 2, 3, 4)
+        # m=0 is the DC component (mean field), usually ~0 or irrelevant for instability
+        # m=1 is the fundamental mode (k = 2pi/L)
+        # Ensure we don't go out of bounds if Nx is very small
+        max_m = min(5, len(Amps)) 
+        
+        # Convert to CPU numpy array for storage
+        Amps_np = to_np(Amps)
+        
+        # Row format: [time, mode_1, mode_2, mode_3, mode_4]
+        # We take slice 1:5 which corresponds to indices 1,2,3,4
+        modes_of_interest = Amps_np[1:5] 
+        
+        row = [float(t)] + modes_of_interest.tolist()
+        self.modes_data.append(row)
+
     # Save all basic simulation parameters to params.txt
     def save_params(self, cfg):
         """Save all basic simulation parameters to params.txt"""
@@ -371,6 +401,10 @@ class Diagnostics:
         energy_arr = _np.array(self.energy_data,float)
         _np.savetxt(os.path.join(self.outdir,"energy.txt"),energy_arr,
                     header="step  W_E_hat  W_K_hat  W_T_hat  (dimensionless)")
+        
+        modes_arr = _np.array(self.modes_data, float)
+        _np.savetxt(os.path.join(self.outdir, "modes_history.txt"), modes_arr,
+                    header="time  |E(k1)|  |E(k2)|  |E(k3)|  |E(k4)| (Normalized by Nx)")
         
         # Save params
         self.save_params(cfg)
@@ -458,6 +492,9 @@ class PIC1D3V_ES:
             # energy diag
             if (it%self.diag.diag_interval)==0 or (it==self.steps-1):
                 WE,WK,WT=self.diag.record_energy(it,self.fields.Ex,self.e.v,self.e.m)
+
+                # 记录模数随时间的变化，用于分析 gamma
+                self.diag.record_field_modes(it * self.dt, self.fields.Ex)
                 if verbose:
                     print(f"[{it:6d}] W_E={WE:.6e}  W_K={WK:.6e}  W_T={WT:.6e}")
 

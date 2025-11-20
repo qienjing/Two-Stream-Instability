@@ -11,6 +11,12 @@ def load_energy(outdir="output"):
         raise FileNotFoundError(f"{path} not found.")
     return np.loadtxt(path)
 
+def load_modes_history(outdir="output"):
+    path = os.path.join(outdir, "modes_history.txt")
+    if not os.path.exists(path):
+        raise FileNotFoundError(f"{path} not found.")
+    return np.loadtxt(path)
+
 def list_spectrum_files(outdir="output"):
     """返回所有电场谱文件 spectrum_*.npz 的完整路径"""
     files = sorted(glob.glob(os.path.join(outdir, "spectrum_*.npz")))
