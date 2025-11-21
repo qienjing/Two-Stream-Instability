@@ -494,7 +494,7 @@ class PIC1D3V_ES:
                 WE,WK,WT=self.diag.record_energy(it,self.fields.Ex,self.e.v,self.e.m)
 
                 # 记录模数随时间的变化，用于分析 gamma
-                self.diag.record_field_modes(it * self.dt, self.fields.Ex)
+                self.diag.record_field_modes(it, self.fields.Ex)
                 if verbose:
                     print(f"[{it:6d}] W_E={WE:.6e}  W_K={WK:.6e}  W_T={WT:.6e}")
 
@@ -542,7 +542,7 @@ if __name__=="__main__":
         Np=1000_000,
 
         dt=0.05, # normalized dt/ω_p = real Δt
-        steps=5000,
+        steps=2000,
 
         v0=5.0, # unit: v_th
         n0=1e15, # unit: m^-3
