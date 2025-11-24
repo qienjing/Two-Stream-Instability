@@ -539,10 +539,10 @@ if __name__=="__main__":
         Np=1000_000,
 
         dt=0.02, # normalized dt/ω_p = real Δt
-        steps=3000,
+        steps=2000,
 
-        v0=2, # unit: 1eV v_th
-        n0=1e15, # unit: m^-3
+        v0=3, # unit: 1eV v_th
+        n0=2e15, # unit: m^-3
         Te=0.01, # unit: eV will 
 
         diag_interval=10,
