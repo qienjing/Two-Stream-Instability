@@ -2,3 +2,7 @@
 output/
 *.npz
 *.txt
+
+note.docx
+~$note.docx
+~WRL0003.tmp

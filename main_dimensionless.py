@@ -110,11 +110,13 @@ class Fields:
 # Particles (1D position, 3V velocity)
 # ---------------------------
 class Particles:
-    def __init__(self, Np, Lx, q_sign=-1.0, dtype=xp.float64):
+    def __init__(self, Np, Lx, n0, q_sign=-1.0, dtype=xp.float64):
         self.Np = int(Np)
         # Physical form: q_macro = q_sign * e * n0 * Lx / Np, m_macro = m_e * n0 * Lx / Np
         # Normalization: e = m_e = n0 = 1 → q = -Lx/Np, m = Lx/Np
-        w = Lx / Np
+        w = n0 * Lx / Np
+        print("print N0")
+        print(n0)
         self.q = dtype(q_sign * w)
         self.m = dtype(w)
         self.x = zeros_like_shape(self.Np, dtype=dtype) # x in [0,Lx)
@@ -309,7 +311,7 @@ class Diagnostics:
         x = _np.mod(x, Lx)
 
         # choose velocity limits
-        vmin, vmax = _np.percentile(vx, [1, 99])  # auto range to ignore outliers
+        vmin, vmax = _np.percentile(vx, [0, 99.5])  # auto range to ignore outliers
         # === histogram for ALL particles ===
         H_all, xedges, vedges = _np.histogram2d(
         x, vx,
@@ -422,7 +424,7 @@ class PIC1D3V_ES:
         self.fields=Fields(self.grid)
         self.dt=float(cfg.dt)
         self.steps=int(cfg.steps)
-        self.e=Particles(cfg.Np,cfg.Lx,q_sign=-1.0)
+        self.e=Particles(cfg.Np,cfg.Lx,cfg.n0,q_sign=-1.0)
         self.v0=float(cfg.v0)
         self.vth=float(cfg.vth)
         self._init_two_stream()
@@ -466,7 +468,7 @@ class PIC1D3V_ES:
         g,e,f,dt=self.grid,self.e,self.fields,self.dt
 
         self.rho -= xp.mean(self.rho) # Quasi-neutral
-        self.rho[:] = 0.25 * (xp.roll(self.rho,-1) + 2*self.rho + xp.roll(self.rho,1)) # 抑制高k噪声
+        # self.rho[:] = 0.25 * (xp.roll(self.rho,-1) + 2*self.rho + xp.roll(self.rho,1)) # 抑制高k噪声
         deposit_charge_CIC(g,e,self.rho)
         # Neutralize background (remove DC component)
         # Physical form: add +n0e to balance mean(ρ)
@@ -476,11 +478,6 @@ class PIC1D3V_ES:
         zeros=xp.zeros_like(Ex_p)
 
         push_particle(e,g,Ex_p,zeros,zeros,zeros,zeros,zeros,dt)
-
-        # if first_step:
-        #     half_step_preheat(e,Ex_p,zeros,zeros,dt)
-        # else:
-        #     push_particle(e,g,Ex_p,zeros,zeros,zeros,zeros,zeros,dt)
 
     def run(self,verbose=True):
         # ---- 初始化后，做一次半步预热 ----
@@ -541,12 +538,12 @@ if __name__=="__main__":
         Nx=512,
         Np=1000_000,
 
-        dt=0.05, # normalized dt/ω_p = real Δt
-        steps=2000,
+        dt=0.02, # normalized dt/ω_p = real Δt
+        steps=3000,
 
-        v0=5.0, # unit: v_th
+        v0=2, # unit: 1eV v_th
         n0=1e15, # unit: m^-3
-        Te=2.0, # unit: eV
+        Te=0.01, # unit: eV will 
 
         diag_interval=10,
         phase_snap=50,
