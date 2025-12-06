@@ -42,12 +42,12 @@ from particles import Particles
 from deposit_charge import deposit_charge
 
 # ---------------------------
-# Field gather (CIC)
-from gather_field import gather_field   
-
-# ---------------------------
 # Poisson solver (periodic)
 from solve_poisson_1d import solve_poisson_1d
+
+# ---------------------------
+# Field gather (CIC)
+from gather_field import gather_field   
 
 # ---------------------------
 # Push particles (Boris non-relativistic)
@@ -60,7 +60,8 @@ from diagnostics import Diagnostics
 # PIC Main class
 # ---------------------------
 from PIC1D3V_ES import PIC1D3V_ES
-# _init_two_stream, init_push, step, run
+# _init_two_stream, init_push, 
+# step(deposit, solve_poisson_1d, gather_field, push_particle), run
 
 # MAIN
 if __name__=="__main__":
