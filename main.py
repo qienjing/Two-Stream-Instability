@@ -70,18 +70,18 @@ if __name__=="__main__":
     # 在 main 里定义输入参数（简洁清晰）
     cfg = PICConfig(
         Lx=30, # domain length in λ_D units (physical Lx = L̂x * λ_D) unit: λ_D
-        Nx=256,
-        Np=1000_000,
+        Nx=64,
+        Np=100_000,
 
         dt=0.02, # normalized dt/ω_pbeam = real Δt
         steps=1000,
 
-        v0=2, # unit: 1eV v_th
+        v0=1, # unit: 1eV v_th
         vth=0.1, # unit: 1eV v_th
-        n0=2e15, # unit: m^-3, beam density per stream
+        n0=1e15, # unit: m^-3, beam density per stream
 
         diag_interval=10,
-        phase_snap=10,
+        phase_snap=20,
     )
 
     sim=PIC1D3V_ES(cfg)
