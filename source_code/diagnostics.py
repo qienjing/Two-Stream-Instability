@@ -42,7 +42,7 @@ class Diagnostics:
         x = _np.mod(x, Lx)
 
         # choose velocity limits
-        vmin, vmax = _np.percentile(vx, [0, 99.5])  # auto range to ignore outliers
+        vmin, vmax = _np.percentile(vx, [0, 100])  # auto range to ignore outliers
         # === histogram for ALL particles ===
         H_all, xedges, vedges = _np.histogram2d(
         x, vx,

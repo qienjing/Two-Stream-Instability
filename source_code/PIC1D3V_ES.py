@@ -28,11 +28,12 @@ class PIC1D3V_ES:
         self.rho=zeros_like_shape(self.grid.Nx)
         self.diag=Diagnostics(self.grid,cfg.outdir,cfg.diag_interval,cfg.phase_snap, cfg=cfg)
 
-    def _init_two_stream(self):
+    def _init_two_stream(self, SEED=12345):
         ## initalize positions uniformly in [0,Lx)
         # Uniformly distribute macro-particles in [0,Lx)
         Np=self.e.Np
         Lx = self.grid.Lx
+        xp.random.seed(SEED)
 
         # === 1. 均匀分布位置 + 随机扰动 ===
         i = xp.arange(Np, dtype=xp.float64)
@@ -88,8 +89,8 @@ class PIC1D3V_ES:
         push_particle(e,g,Ex_p,zeros,zeros,zeros,zeros,zeros,dt)
 
     def run(self,verbose=True):
-        # self._init_two_stream()
-        initialize_particles(self.e, self.cfg)
+        self._init_two_stream()
+        # initialize_particles(self.e, self.cfg)
         self.init_push()
         for it in range(self.steps):
             WE_prev, WK_prev = 0.0, 0.0   # 初始化（第0步之前）
