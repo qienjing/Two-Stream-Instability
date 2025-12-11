@@ -4,10 +4,11 @@ import sys, os
 
 # 加载上一级目录模块
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-from backend import xp, to_np
-from grid1D import Grid1D
-from particles import Particles
-from push_particle import push_particle
+import source_code
+from source_code.backend import xp, to_np
+from source_code.grid1D import Grid1D
+from source_code.particles import Particles
+from source_code.push_particle import push_particle
 
 
 def unwrap_periodic(x_arr, Lx):
@@ -75,22 +76,39 @@ def test_1d_sine_E():
     x_unwrap = unwrap_periodic(x_num, Lx)
 
     # ---------- 绘图 ----------
-    plt.figure(figsize=(8, 4))
+    plt.figure(figsize=(8, 4), dpi=100)
 
+    # 全局字体设置
+    title_size = 18
+    label_size = 14
+    tick_size = 14
+    legend_size = 14
+
+    # ------------------------
     plt.subplot(1, 2, 1)
-    plt.title("Velocity vs Time")
-    plt.plot(ts, v_num, label="numerical")
-    plt.plot(ts, v_ana, "--", label="analytic")
-    plt.xlabel("t"); plt.ylabel("vx"); plt.legend()
+    plt.title("Velocity vs Time", fontsize=title_size)
+    plt.plot(ts, v_num, label="numerical", lw=3)
+    plt.plot(ts, v_ana, "--", label="analytic", lw=3)
+    plt.xlabel("t", fontsize=label_size)
+    plt.ylabel("vx", fontsize=label_size)
+    plt.xticks(fontsize=tick_size)
+    plt.yticks(fontsize=tick_size)
+    plt.legend(fontsize=legend_size)
 
+    # ------------------------
     plt.subplot(1, 2, 2)
-    plt.title("Position vs Time (unwrapped)")
-    plt.plot(ts, x_unwrap, label="numerical")
-    plt.plot(ts, x_ana, "--", label="analytic")
-    plt.xlabel("t"); plt.ylabel("x"); plt.legend()
+    plt.title("Position vs Time", fontsize=title_size)
+    plt.plot(ts, x_unwrap, label="numerical", lw=3)
+    plt.plot(ts, x_ana, "--", label="analytic", lw=3)
+    plt.xlabel("t", fontsize=label_size)
+    plt.ylabel("x", fontsize=label_size)
+    plt.xticks(fontsize=tick_size)
+    plt.yticks(fontsize=tick_size)
+    plt.legend(fontsize=legend_size)
 
     plt.tight_layout()
     plt.show()
+
 
 
 if __name__ == "__main__":

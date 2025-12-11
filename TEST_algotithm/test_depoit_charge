@@ -1,9 +1,10 @@
 import sys, os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-from backend import xp, CUPY, scatter_add
-from grid1D import Grid1D
-from particles import Particles
-from deposit_charge import deposit_charge
+import source_code
+from source_code.backend import xp, CUPY, scatter_add
+from source_code.grid1D import Grid1D
+from source_code.particles import Particles
+from source_code.deposit_charge import deposit_charge
 
 
 # ---------------------
