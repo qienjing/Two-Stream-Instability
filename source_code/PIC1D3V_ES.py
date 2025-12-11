@@ -3,6 +3,7 @@ from .backend import xp, to_np, zeros_like_shape
 from .grid1D import Grid1D
 from .particles import Particles
 from .fields import Fields
+from .initial import initialize_particles
 from .solve_poisson_1d import solve_poisson_1d
 from .deposit_charge import deposit_charge
 from .gather_field import gather_field
@@ -87,7 +88,8 @@ class PIC1D3V_ES:
         push_particle(e,g,Ex_p,zeros,zeros,zeros,zeros,zeros,dt)
 
     def run(self,verbose=True):
-        self._init_two_stream()
+        # self._init_two_stream()
+        initialize_particles(self.e, self.cfg)
         self.init_push()
         for it in range(self.steps):
             WE_prev, WK_prev = 0.0, 0.0   # 初始化（第0步之前）

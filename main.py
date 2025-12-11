@@ -88,7 +88,7 @@ if __name__=="__main__":
         dt=0.02, # normalized dt/ω_pbeam = real Δt
         steps=1000,
 
-        v0=1, # unit: 1eV v_th
+        v0=1.0, # unit: 1eV v_th
         vth=0.1, # unit: 1eV v_th
         n0=1e15, # unit: m^-3, beam density per stream
 
