@@ -74,10 +74,10 @@ if __name__=="__main__":
         Np=500_000,
 
         dt=0.02, # normalized dt/ω_pbeam = real Δt
-        steps=1000,
+        steps=2000,
 
         v0=1, # unit: 1eV v_th
-        vth=0.1, # unit: 1eV v_th
+        vth=0.8, # unit: 1eV v_th
         n0=1e15, # unit: m^-3, beam density per stream
 
         diag_interval=10,

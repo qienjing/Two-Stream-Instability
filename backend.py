@@ -6,11 +6,11 @@ backend.py
 
 import math
 
-USE_CUPY = True
+USE_cupy = True
 SEED = 12345
 
 try:
-    if USE_CUPY:
+    if USE_cupy:
         import cupy as cp
         from cupyx import scatter_add as cpx_scatter_add
         xp = cp
