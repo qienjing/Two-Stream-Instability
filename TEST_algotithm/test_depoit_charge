@@ -9,7 +9,7 @@ from deposit_charge import deposit_charge
 # ---------------------
 # 1. grid setup
 # ---------------------
-Nx = 16
+Nx = 20
 Lx = 1.0
 grid = Grid1D(Nx=Nx, Lx=Lx)
 dx = grid.dx
@@ -22,7 +22,7 @@ parts = type("P", (), {})()
 parts.x = xp.array([
     0.10,        # particle near left boundary
     0.37,        # arbitrary point
-    0.92         # near right boundary → tests periodic wrapping
+    0.96         # near right boundary → tests periodic wrapping
 ])
 
 parts.q = xp.array([
