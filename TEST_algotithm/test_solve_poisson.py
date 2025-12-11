@@ -1,5 +1,5 @@
 import numpy as np
-from main_dimensionless import Grid1D, solve_poisson_1d, xp, CUPY
+from main import Grid1D, solve_poisson_1d, xp, CUPY
 
 
 # ----------------------------

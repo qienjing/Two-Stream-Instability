@@ -5,11 +5,11 @@ import math
 class PICConfig:
     # === 用户输入参数 ===
     Lx: float = 30.0          # [λ_D] 盒长
-    Nx: int = 256             # 网格数
-    Np: int = 800_000         # 粒子数
-    dt: float = 0.005         # [1/ω_p] 步长
+    Nx: int = 32             # 网格数
+    Np: int = 500_000         # 粒子数
+    dt: float = 0.02        # [1/ω_p] 步长
     steps: int = 5000
-    v0: float = 5.0           # [v_th] 漂移速度
+    v0: float = 1.0          # [v_th] 漂移速度
     vth: float = 0.1          # [v_th] 热速
     n0: float = 1.0e15     # [m^-3] beam density per stream
     outdir: str = "output"

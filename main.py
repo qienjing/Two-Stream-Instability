@@ -71,7 +71,7 @@ if __name__=="__main__":
     cfg = PICConfig(
         Lx=30, # domain length in λ_D units (physical Lx = L̂x * λ_D) unit: λ_D
         Nx=64,
-        Np=100_000,
+        Np=500_000,
 
         dt=0.02, # normalized dt/ω_pbeam = real Δt
         steps=1000,
