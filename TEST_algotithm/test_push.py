@@ -1,8 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import sys, os
-
-# 加载上一级目录模块
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 import source_code
 from source_code.backend import xp, to_np
@@ -23,7 +21,6 @@ def unwrap_periodic(x_arr, Lx):
 
 
 def test_1d_sine_E():
-    # ---------- 参数 ----------
     Np   = 1
     Lx   = 20.0
     Nx   = 64
@@ -32,11 +29,10 @@ def test_1d_sine_E():
     E0   = 0.1
     omega = 0.4
 
-    # 初始条件
+
     x0 = 5.0
     v0 = 0.2
 
-    # ---------- 初始化 ----------
     grid = Grid1D(Lx=Lx, Nx=Nx)
     parts = Particles(Np=Np, Lx=Lx, n0=1.0)
 
@@ -44,7 +40,6 @@ def test_1d_sine_E():
     parts.v[:] = 0.0
     parts.v[:, 0] = v0  # vx = v0
 
-    # ---------- 保存轨迹 ----------
     ts = np.arange(nstep+1) * dt
     x_num = np.zeros(nstep+1)
     v_num = np.zeros(nstep+1)
@@ -52,7 +47,7 @@ def test_1d_sine_E():
     x_num[0] = float(parts.x[0])
     v_num[0] = float(parts.v[0, 0])
 
-    # ---------- 主循环 ----------
+    # main loop
     for n in range(nstep):
         t_mid = (n + 0.5) * dt
         Ex_val = E0 * np.sin(omega * t_mid)
@@ -69,15 +64,13 @@ def test_1d_sine_E():
         x_num[n+1] = float(parts.x[0])
         v_num[n+1] = float(parts.v[0, 0])
 
-    # ---------- 解析解 ----------
+    # the analytic solution
     v_ana = v0 + (E0 / omega) * (np.cos(omega * ts) - 1.0)
     x_ana = x0 + (v0 - E0 / omega) * ts + (E0 / omega**2) * np.sin(omega * ts)
 
     x_unwrap = unwrap_periodic(x_num, Lx)
 
-    # ---------- 绘图 ----------
     plt.figure(figsize=(8, 4), dpi=100)
-
     # 全局字体设置
     title_size = 18
     label_size = 14

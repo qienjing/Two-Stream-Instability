@@ -1,20 +1,14 @@
 import numpy as np
 import os, sys
-
-# -------------------------------------------------
-# 让 test 可以从根目录找到 source_code 包
-# -------------------------------------------------
-ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-if ROOT not in sys.path:
-    sys.path.append(ROOT)
-
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+import source_code
 from source_code.grid1D import Grid1D
 from source_code.solve_poisson_1d import solve_poisson_1d
 from source_code.backend import xp, CUPY, to_xp, to_np
 
 
 # ----------------------------
-# L2 误差
+# L2 error
 # ----------------------------
 def L2(a, b):
     a = to_np(a)
@@ -54,7 +48,7 @@ def test_single_mode(m=1):
     Ex_num, phi = solve_poisson_1d(grid, to_xp(rho))
     Ex_num = to_np(Ex_num)
 
-    # ---- 解析解 ----
+    # the analytic solution
     Ex_true = (1.0 / k) * np.sin(k * x)
 
     print(f"Test 2 (m={m}): L2 error =", L2(Ex_true, Ex_num))
@@ -81,9 +75,9 @@ def test_random():
     Ex_num, phi_num = solve_poisson_1d(grid, rho_xp)
     Ex_num = to_np(Ex_num)
 
-    # ---- 构造解析解 (与 solver 一致，无 kd) ----
+    # generate the analytic solution in k-space
     rho_k = xp.fft.rfft(to_xp(rho))
-    k = grid.k                          # <<< 使用 k，不使用 kd
+    k = grid.k                      
 
     phi_k = xp.zeros_like(rho_k)
     phi_k[1:] = rho_k[1:] / (k[1:]**2)
