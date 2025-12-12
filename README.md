@@ -1,7 +1,7 @@
-# Two-stream-instability
+# Two Stream Instability
 
 ## Project Description
-This repository implements a 1D3V (one-dimensional, three-velocity-component) electrostatic Particle-In-Cell (PIC) simulator for studying two-stream instability. The modular design keeps the core steps—particle pushing, charge deposition, Poisson solving, and diagnostics—backend-agnostic so they can run with either NumPy (CPU) or CuPy (GPU). Typical uses include validating two-stream growth rates, checking energy closure, and visualizing phase-space evolution.
+This repository implements a 1D3V (one-dimensional, three-velocity-component) electrostatic Particle-In-Cell (PIC) simulator for studying two-stream instability. The modular design keeps the core steps: charge deposition, Poisson solving, field gathering, particle pushing and diagnostics. The code can be run with either NumPy (CPU) or CuPy (GPU). Typical uses include validating two stream growth rates, checking energy closure, fourier analysis and visualizing phase space evolution.
 
 ## How to Use
 1. **Environment dependencies**
@@ -33,7 +33,7 @@ This repository implements a 1D3V (one-dimensional, three-velocity-component) el
    - CPU: Set `FORCE_DEVICE = "cpu"` to simplify step-through debugging with any Python IDE.
    - GPU: Set `FORCE_DEVICE = "gpu"` and reduce `n_particles` or `n_steps` in `main.py` to shorten iteration cycles while profiling.
 
-## Directory Structure and Script Roles
+## Directory Structure
 - `main.py`: Entry point that loads configuration, initializes the two-stream distribution, and runs the main loop.
 - `source_code/`: Core numerical modules.
   - `backend.py`: Manages the NumPy/CuPy backend, random seeds, and helper utilities.
