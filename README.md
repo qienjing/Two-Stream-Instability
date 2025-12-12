@@ -1,4 +1,4 @@
-# Two-streamer-instability
+# Two-stream-instability
 
 ## Project Description
 This repository implements a 1D3V (one-dimensional, three-velocity-component) electrostatic Particle-In-Cell (PIC) simulator for studying two-stream instability. The modular design keeps the core steps—particle pushing, charge deposition, Poisson solving, and diagnostics—backend-agnostic so they can run with either NumPy (CPU) or CuPy (GPU). Typical uses include validating two-stream growth rates, checking energy closure, and visualizing phase-space evolution.
