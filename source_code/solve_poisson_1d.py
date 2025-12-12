@@ -8,7 +8,7 @@ def solve_poisson_1d(grid: Grid1D, rho, eps0=1.0):
     k = grid.k
     rho_k = fft.rfft(rho)
     phi_k = xp.zeros_like(rho_k, dtype=rho_k.dtype)
-    phi_k[0] = 0.0                     # ✅ 去除 k=0 模 (DC component)
+    phi_k[0] = 0.0                     # ✅ Remove k=0 mode (DC component)
     
     phi_k[1:] = rho_k[1:] / (eps0 * (k[1:]**2))
     phi = fft.irfft(phi_k, n=Nx).astype(rho.dtype)
