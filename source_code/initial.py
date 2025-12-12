@@ -1,18 +1,18 @@
 def initialize_particles(particles, cfg, seed=12345):
     """
-    初始化粒子，逻辑与 _init_two_stream 完全一致，
-    并根据 backend.INIT_DEVICE 选择 CPU/Numpy 或 GPU/CuPy。
+    Initialize particles using the same logic as _init_two_stream,
+    selecting CPU/NumPy or GPU/CuPy based on backend.INIT_DEVICE.
     """
     from .backend import INIT_DEVICE, CUPY, to_xp
     import numpy as np
 
     # ============================================
-    # 选择设备 (CPU or GPU)
+    # Select device (CPU or GPU)
     # ============================================
     use_cpu = (INIT_DEVICE == "cpu") or (INIT_DEVICE == "auto" and not CUPY)
 
     if use_cpu:
-        # ------------------- CPU 初始化 -------------------
+        # ------------------- CPU initialization -------------------
         xp_cpu = np
         xp_cpu.random.seed(seed)
 
@@ -21,12 +21,12 @@ def initialize_particles(particles, cfg, seed=12345):
         v0 = float(cfg.v0)
         vth = float(cfg.vth)
 
-        # === 1. 均匀分布 x + 扰动 ===
+        # === 1. Uniform x distribution with perturbations ===
         i = xp_cpu.arange(Np, dtype=float)
         rnd = xp_cpu.random.random(Np).astype(float)
         x = ((i + rnd) / Np) * Lx
 
-        # === 2. 标签 ===
+        # === 2. Labels ===
         half = Np // 2
         labels = xp_cpu.concatenate((
             xp_cpu.zeros(half, dtype=np.int8),
@@ -46,7 +46,7 @@ def initialize_particles(particles, cfg, seed=12345):
         return
 
     else:
-        # ------------------- GPU 初始化 -------------------
+        # ------------------- GPU initialization -------------------
         import cupy as cp
         cp.random.seed(seed)
 
@@ -57,12 +57,12 @@ def initialize_particles(particles, cfg, seed=12345):
         v0 = float(cfg.v0)
         vth = float(cfg.vth)
 
-        # === 1. 均匀分布 x + 扰动 ===
+        # === 1. Uniform x distribution with perturbations ===
         i = xp.arange(Np, dtype=xp.float64)
         rnd = xp.random.random(Np).astype(xp.float64)
         x = ((i + rnd) / Np) * Lx
 
-        # === 2. 标签 ===
+        # === 2. Labels ===
         half = Np // 2
         labels = xp.concatenate((
             xp.zeros(half, dtype=xp.int8),

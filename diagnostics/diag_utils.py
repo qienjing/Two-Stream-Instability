@@ -18,7 +18,7 @@ def load_modes_history(outdir="output"):
     return np.loadtxt(path)
 
 def robust_linear_fit(t, y, frac=1/3, min_pts=6):
-    """在前 frac 部分时间窗口内线性拟合 y ~ a + b t"""
+    """Linearly fit y ~ a + b t over the first frac portion of the time window."""
     n = max(int(len(t)*frac), min_pts)
     n = min(n, len(t))
     if n < 2: return np.nan, np.nan
