@@ -6,8 +6,8 @@ from .particles import Particles
 def push_particle(parts: Particles, grid: Grid1D, Ex_p, Ey_p, Ez_p, Bx_p, By_p, Bz_p, dt):
     """
     Leapfrog Boris pusher (position + velocity, one call).
-    输入：x^n 与 v^{n+1/2} (v_nhalf)，
-    用 v^{n+1/2} 推到 x^{n+1}；再用 Boris 得到 v^{n+3/2}。
+    Input: x^n and v^{n+1/2} (v_nhalf).
+    Use v^{n+1/2} to advance to x^{n+1}, then apply Boris to obtain v^{n+3/2}.
 
     """
     # Physical form: dv/dt = (q/m)(E + v×B)
@@ -21,12 +21,12 @@ def push_particle(parts: Particles, grid: Grid1D, Ex_p, Ey_p, Ez_p, Bx_p, By_p, 
     # (1) Boris: v^{n-1/2} + E^{n} -> v^{n+1/2}
     qmdt2 = (q * dt) / (2.0 * m)
 
-    # 预半步 E-kick：u = v^{n-1/2} + (qE/m) dt/2
+    # First half-step E-kick: u = v^{n-1/2} + (qE/m) dt/2
     ux = v[:,0] + qmdt2 * Ex_p
     uy = v[:,1] + qmdt2 * Ey_p
     uz = v[:,2] + qmdt2 * Ez_p
 
-    # B 旋转（支持未来加入磁场；电静态时 Bp=0 即可）
+    # B rotation (supports adding magnetic field later; electrostatic sets Bp=0)
     hx = qmdt2 * Bx_p
     hy = qmdt2 * By_p
     hz = qmdt2 * Bz_p
@@ -43,7 +43,7 @@ def push_particle(parts: Particles, grid: Grid1D, Ex_p, Ey_p, Ez_p, Bx_p, By_p, 
     upy = uy + (vpz * sx - vpx * sz)
     upz = uz + (vpx * sy - vpy * sx)
 
-    # 后半步 E-kick：v^{n+1/2} = v^+ = v' + (qE/m) dt/2, 这一步是为了下一次推进做准备
+    # Second half-step E-kick: v^{n+1/2} = v^+ = v' + (qE/m) dt/2, preparing for next step
     v[:,0] = upx + qmdt2 * Ex_p
     v[:,1] = upy + qmdt2 * Ey_p
     v[:,2] = upz + qmdt2 * Ez_p
