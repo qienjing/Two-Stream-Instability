@@ -78,14 +78,14 @@ class Diagnostics:
 
     def record_fields(self, it, x_grid, rho_xp, phi_xp, Ex_xp):
         """
-        保存场量分布：Rho(x), Phi(x), Ex(x)
+        Save field distributions: Rho(x), Phi(x), Ex(x).
         """
-        # 转为 CPU numpy
+        # Convert to CPU NumPy
         rho = to_np(rho_xp)
         phi = to_np(phi_xp)
         Ex  = to_np(Ex_xp)
-        
-        # 简单的 x 轴坐标 (0 到 Lx)
+
+        # Simple x-axis coordinates from 0 to Lx
         x_axis = _np.linspace(0, self.grid.Lx, self.grid.Nx, endpoint=False)
 
         outpath = os.path.join(self.outdir, f"fields_{it:05d}.npz")
