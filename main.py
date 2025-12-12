@@ -15,19 +15,42 @@ Outputs (under ./output):
 Author: Qien Jing, Han Zhao
 """
 
-import os, math, glob
+import os, math, glob, shutil, time
 import source_code
 
 # ---------------------------
-# Auto-clean output directory
+# Auto-clean output directory (force delete, if no needed, comment out)
 OUT_DIR = "output"
 os.makedirs(OUT_DIR, exist_ok=True)
+
 for f in glob.glob(os.path.join(OUT_DIR, "*")):
-    if os.path.isfile(f):
-        os.remove(f)
-    elif os.path.isdir(f):
-        import shutil
-        shutil.rmtree(f)
+    try:
+        # ---------- normal delete ----------
+        if os.path.isfile(f):
+            os.remove(f)
+        elif os.path.isdir(f):
+            shutil.rmtree(f)
+
+    except PermissionError:
+        # ---------- Windows force delete  ----------
+        temp = f + ".delete_me"
+
+        try:
+            # Attempt to rename (renaming often succeeds even if the file is in use)
+            os.rename(f, temp)
+
+            # Then attempt to delete the renamed file
+            if os.path.isfile(temp):
+                os.remove(temp)
+            elif os.path.isdir(temp):
+                shutil.rmtree(temp)
+
+            print(f"[Force Delete] Locked file removed: {f}")
+
+        except Exception as e:
+            print(f"[Warning] Failed to delete {f}: {e}")
+# ---------------------------
+
 
 # ---------------------------
 # Configuration dataclass

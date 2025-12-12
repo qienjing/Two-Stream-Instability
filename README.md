@@ -49,7 +49,7 @@ This repository implements a 1D3V (one-dimensional, three-velocity-component) el
   - `diagnostics.py`: Computes and saves energy, spectra, and phase-space diagnostics.
   - `PIC1D3V_ES.py`: Main electrostatic PIC class that wires components, initializes state, advances in time, and triggers diagnostics.
   - `__init__.py`: Package initializer.
-- `diagnostics/`: Analysis and visualization helpers.
+- `diagnostics/`: Analysis and visualization: including kinetic and electrostatic energy, linear growth rate calculation, fourier analysis, numerical solved dispersion relation, phase space evolution, velocity distribution evolution, position distribution evolution, the evolution of the electrostatic potential energy for a electron.
   - `Diag_visual.ipynb`: Example notebook for plotting diagnostic outputs.
   - `config_paths.py`, `diag_utils.py`: Path configuration plus plotting/processing utilities.
   - `gamma_vs_vth.png`: Sample growth-rate figure.
