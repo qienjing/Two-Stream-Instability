@@ -62,4 +62,4 @@ This repository implements a 1D3V (one dimensional, three velocity component) el
 - `output/` (generated during runs): Stores energy, spectrum, and phase-space outputs.
 - `report/`: Stores energy, spectrum, and phase-space outputs.
    - `PIC_TS_Report.tex`: `.tex` file of the report.
-   - `figure`: All the figures needed in the report.
+   - `figure/`: All the figures needed in the report.
