@@ -1,7 +1,7 @@
 # Two Stream Instability
 
 ## Project Description
-This repository implements a 1D3V (one-dimensional, three-velocity-component) electrostatic Particle-In-Cell (PIC) simulator for studying two-stream instability. The modular design keeps the core steps: charge deposition, Poisson solving, field gathering, particle pushing and diagnostics. The code can be run with either NumPy (CPU) or CuPy (GPU). Typical uses include validating two stream growth rates, checking energy closure, fourier analysis and visualizing phase space evolution.
+This repository implements a 1D3V (one dimensional, three velocity component) electrostatic Particle In Cell (PIC) simulator for studying two stream instability. The modular design keeps the core steps: charge deposition, Poisson solving, field gathering, particle pushing and diagnostics. The code can be run with either NumPy (CPU) or CuPy (GPU). Typical uses include validating two stream growth rates, checking energy closure, fourier analysis and visualizing phase space evolution.
 
 ## How to Use
 1. **Environment dependencies**
