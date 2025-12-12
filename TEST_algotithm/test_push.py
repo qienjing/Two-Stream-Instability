@@ -71,7 +71,7 @@ def test_1d_sine_E():
     x_unwrap = unwrap_periodic(x_num, Lx)
 
     plt.figure(figsize=(8, 4), dpi=100)
-    # 全局字体设置
+    # Global font settings
     title_size = 18
     label_size = 14
     tick_size = 14

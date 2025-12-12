@@ -1,18 +1,18 @@
 # -*- coding: utf-8 -*-
 """
 backend.py
-统一管理 NumPy/CuPy 后端、FFT、随机种子、to_np/to_xp 工具函数
+Manage NumPy/CuPy backend selection, FFT, random seeds, and to_np/to_xp helpers.
 """
 
 import math
 
-USE_cupy = True     # 原来的参数（仍支持）
+USE_cupy = True     # Legacy flag (still supported)
 FORCE_DEVICE = "gpu"   # "cpu", "gpu", or "auto"
 INIT_DEVICE = "gpu"   # internal use only: "cpu" or "gpu"
 SEED = 12345
 
 # ============================================================
-# 选择 CPU / GPU 后端逻辑
+# Backend selection logic for CPU / GPU
 # ============================================================
 
 def _force_cpu_backend():
@@ -36,7 +36,7 @@ def _try_gpu_backend():
         "CUPY": True
     }
 
-# ----------- 设备选择流程 -----------
+# ----------- Device selection flow -----------
 backend = None
 
 if FORCE_DEVICE.lower() == "cpu":
@@ -46,30 +46,30 @@ elif FORCE_DEVICE.lower() == "gpu":
     try:
         backend = _try_gpu_backend()
     except Exception as e:
-        raise RuntimeError("强制 GPU 模式，但 CuPy 不可用: " + str(e))
+        raise RuntimeError("Forced GPU mode but CuPy is unavailable: " + str(e))
 
 elif FORCE_DEVICE.lower() == "auto":
-    # 原 auto：优先 GPU，失败则 CPU
+    # Original auto mode: prefer GPU, fall back to CPU on failure
     try:
         backend = _try_gpu_backend()
     except Exception:
         backend = _force_cpu_backend()
 
 else:
-    raise ValueError('FORCE_DEVICE 必须为 "cpu", "gpu", 或 "auto"')
+    raise ValueError('FORCE_DEVICE must be "cpu", "gpu", or "auto"')
 
-# 解包
+# Unpack
 xp = backend["xp"]
 fft = backend["fft"]
 scatter_add = backend["scatter_add"]
 CUPY = backend["CUPY"]
 
-# CPU RNG 仍然需要初始化
+# CPU RNG still needs initialization
 if not CUPY:
     xp.random.seed(SEED)
 
 # ============================================================
-# 工具函数
+# Utility functions
 # ============================================================
 
 def to_xp(a):
