@@ -79,7 +79,7 @@ from source_code.PIC1D3V_ES import PIC1D3V_ES
 if __name__=="__main__":
     print(f"Backend: {'CuPy (GPU)' if CUPY else 'NumPy (CPU)'}")
 
-    # 在 main 里定义输入参数（简洁清晰）
+    # Define input parameters in main for clarity
     cfg = PICConfig(
         Lx=30, # domain length in λ_D units (physical Lx = L̂x * λ_D) unit: λ_D
         Nx=64,
